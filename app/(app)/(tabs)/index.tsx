@@ -1,24 +1,22 @@
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { useInvoices } from "../../src/hooks/useInvoices";
-import { useCustomers } from "../../src/hooks/useCustomers";
-import { useActiveBusiness } from "../../src/hooks/useBusiness";
-import { useLogout } from "../../src/hooks/useAuth";
-import { useAuthStore, useActiveRole } from "../../src/stores/authStore";
-import { Card, CardContent, CardHeader, CardTitle } from "../../src/components/Card";
-import { Button } from "../../src/components/Button";
-import { Badge } from "../../src/components/Badge";
-import { LoadingSpinner } from "../../src/components/LoadingSpinner";
-import { EmptyState } from "../../src/components/EmptyState";
-import { formatCurrency, formatDate, getMonthStartEnd } from "../../src/utils/format";
+import { useInvoices } from "../../../src/hooks/useInvoices";
+import { useCustomers } from "../../../src/hooks/useCustomers";
+import { useActiveBusiness } from "../../../src/hooks/useBusiness";
+import { useActiveRole } from "../../../src/stores/authStore";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../src/components/Card";
+import { Button } from "../../../src/components/Button";
+import { Badge } from "../../../src/components/Badge";
+import { LoadingSpinner } from "../../../src/components/LoadingSpinner";
+import { EmptyState } from "../../../src/components/EmptyState";
+import { formatCurrency, formatDate, getMonthStartEnd } from "../../../src/utils/format";
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const role = useActiveRole();
-  const logout = useLogout();
   const { data: business } = useActiveBusiness();
   const { start, end } = getMonthStartEnd();
 
@@ -63,7 +61,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
       <ScrollView
         className="flex-1"
         refreshControl={
@@ -71,29 +69,13 @@ export default function DashboardScreen() {
         }
       >
         <View className="px-4 py-4">
-          <View className="flex-row items-center justify-between mb-6">
-            <View>
-              <Text className="text-2xl font-bold text-gray-900">
-                {business?.tradeName ?? "Dashboard"}
-              </Text>
-              <Text className="text-gray-500 text-sm">
-                {role === "OWNER" ? "Owner" : role === "ACCOUNTANT" ? "Accountant" : "Viewer"}
-              </Text>
-            </View>
-            <View className="flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => router.push("/(app)/settings")}
-                className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
-              >
-                <Ionicons name="settings-outline" size={20} color="#374151" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => logout.mutate()}
-                className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
-              >
-                <Ionicons name="log-out-outline" size={20} color="#374151" />
-              </TouchableOpacity>
-            </View>
+          <View className="mb-6">
+            <Text className="text-2xl font-bold text-gray-900">
+              {business?.tradeName ?? "Dashboard"}
+            </Text>
+            <Text className="text-gray-500 text-sm">
+              {role === "OWNER" ? "Owner" : role === "ACCOUNTANT" ? "Accountant" : "Viewer"}
+            </Text>
           </View>
 
           <View className="flex-row gap-3 mb-6">
@@ -134,11 +116,9 @@ export default function DashboardScreen() {
           <Card className="mb-4">
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle>Recent Invoices</CardTitle>
-              <Link href="/(app)/invoices" asChild>
-                <TouchableOpacity>
-                  <Text className="text-primary text-sm font-medium">View all</Text>
-                </TouchableOpacity>
-              </Link>
+              <TouchableOpacity onPress={() => router.push("/(app)/(tabs)/sales")}>
+                <Text className="text-primary text-sm font-medium">View all</Text>
+              </TouchableOpacity>
             </CardHeader>
             <CardContent className="p-0">
               {recentInvoices?.data.length === 0 ? (
@@ -183,31 +163,6 @@ export default function DashboardScreen() {
               )}
             </CardContent>
           </Card>
-
-          <View className="flex-row gap-3">
-            <TouchableOpacity
-              onPress={() => router.push("/(app)/products")}
-              className="flex-1"
-            >
-              <Card>
-                <CardContent className="p-4 items-center">
-                  <Ionicons name="cube-outline" size={24} color="#0052CC" />
-                  <Text className="text-gray-900 font-medium mt-2">Products</Text>
-                </CardContent>
-              </Card>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/(app)/customers")}
-              className="flex-1"
-            >
-              <Card>
-                <CardContent className="p-4 items-center">
-                  <Ionicons name="people-outline" size={24} color="#0052CC" />
-                  <Text className="text-gray-900 font-medium mt-2">Customers</Text>
-                </CardContent>
-              </Card>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

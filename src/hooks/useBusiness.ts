@@ -66,7 +66,7 @@ export function useCreateBusiness() {
     onSuccess: async (data) => {
       await addMembership(data.membership);
       queryClient.invalidateQueries({ queryKey: ["businesses"] });
-      router.replace("/(app)");
+      router.replace("/(app)/(tabs)");
     },
   });
 }

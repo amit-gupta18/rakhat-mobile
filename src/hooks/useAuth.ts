@@ -28,7 +28,7 @@ export function useSignup() {
         refreshToken: data.refreshToken,
         memberships: data.memberships,
       });
-      router.replace("/(app)");
+      router.replace("/(app)/(tabs)");
     },
   });
 }
@@ -50,7 +50,7 @@ export function useLogin() {
       if (data.memberships.length === 0) {
         router.replace("/(app)/onboarding");
       } else {
-        router.replace("/(app)");
+        router.replace("/(app)/(tabs)");
       }
     },
   });

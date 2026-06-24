@@ -34,12 +34,15 @@ export default function AppLayout() {
   return (
     <OfflineSyncProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="invoices" />
         <Stack.Screen name="products" />
         <Stack.Screen name="customers" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="payments" />
+        <Stack.Screen name="insights" />
+        <Stack.Screen name="team" />
       </Stack>
     </OfflineSyncProvider>
   );

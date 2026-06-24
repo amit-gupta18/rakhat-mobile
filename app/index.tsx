@@ -15,7 +15,7 @@ export default function Index() {
       if (memberships.length === 0) {
         router.replace("/(app)/onboarding");
       } else {
-        router.replace("/(app)");
+        router.replace("/(app)/(tabs)");
       }
     } else {
       router.replace("/(auth)/login");
