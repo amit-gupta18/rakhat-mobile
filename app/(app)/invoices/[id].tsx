@@ -10,42 +10,40 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { File, Directory, Paths } from "expo-file-system";
-import * as Sharing from "expo-sharing";
-import { useInvoice, useInvoicePdf, useCancelInvoice } from "../../../src/hooks/useInvoices";
+import { useInvoice, useCancelInvoice } from "../../../src/hooks/useInvoices";
 import { useActiveRole } from "../../../src/stores/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../src/components/Card";
 import { Button } from "../../../src/components/Button";
 import { Badge } from "../../../src/components/Badge";
 import { LoadingSpinner } from "../../../src/components/LoadingSpinner";
+import { InvoicePdfPreviewModal } from "../../../src/components/InvoicePdfPreviewModal";
+import { shareInvoicePdf } from "../../../src/utils/invoicePdf";
 import { formatCurrency, formatDate } from "../../../src/utils/format";
 
 export default function InvoiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [sharingPdf, setSharingPdf] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
   const role = useActiveRole();
 
   const { data: invoice, isLoading } = useInvoice(id);
-  const { data: pdfData, refetch: fetchPdf } = useInvoicePdf(id, false);
   const cancelInvoice = useCancelInvoice();
 
-  const handleDownloadPdf = async () => {
-    setDownloadingPdf(true);
+  const handleSharePdf = async () => {
+    if (!id || !invoice) return;
+
+    setSharingPdf(true);
     try {
-      const { data } = await fetchPdf();
-      if (data?.url && invoice) {
-        const pdfDir = new Directory(Paths.cache, "pdfs");
-        if (!pdfDir.exists) {
-          pdfDir.create();
-        }
-        const pdfFile = await File.downloadFileAsync(data.url, pdfDir);
-        await Sharing.shareAsync(pdfFile.uri, { mimeType: "application/pdf" });
-      }
+      await shareInvoicePdf(id, invoice.invoiceNumber);
     } catch (error) {
-      Alert.alert("Error", "Failed to download PDF. Please try again.");
+      Alert.alert(
+        "Share failed",
+        error instanceof Error
+          ? error.message
+          : "Could not download or share the invoice PDF. Please try again."
+      );
     } finally {
-      setDownloadingPdf(false);
+      setSharingPdf(false);
     }
   };
 
@@ -82,6 +80,7 @@ export default function InvoiceDetailScreen() {
 
   const canCancel =
     invoice.status === "ISSUED" && (role === "OWNER" || role === "ACCOUNTANT");
+  const canPreviewOrShare = invoice.status === "ISSUED";
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -92,7 +91,13 @@ export default function InvoiceDetailScreen() {
         <Text className="text-lg font-semibold text-gray-900">
           {invoice.invoiceNumber}
         </Text>
-        <View className="w-6" />
+        {canPreviewOrShare ? (
+          <TouchableOpacity onPress={() => setShowPdfPreview(true)}>
+            <Text className="text-primary font-semibold">Preview</Text>
+          </TouchableOpacity>
+        ) : (
+          <View className="w-14" />
+        )}
       </View>
 
       <ScrollView className="flex-1 p-4">
@@ -235,24 +240,29 @@ export default function InvoiceDetailScreen() {
                 {formatCurrency(invoice.taxableAmount)}
               </Text>
             </View>
-            <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
-              <Text className="text-gray-500">CGST</Text>
-              <Text className="font-medium text-gray-900">
-                {formatCurrency(invoice.cgstTotal)}
-              </Text>
-            </View>
-            <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
-              <Text className="text-gray-500">SGST</Text>
-              <Text className="font-medium text-gray-900">
-                {formatCurrency(invoice.sgstTotal)}
-              </Text>
-            </View>
-            <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
-              <Text className="text-gray-500">IGST</Text>
-              <Text className="font-medium text-gray-900">
-                {formatCurrency(invoice.igstTotal)}
-              </Text>
-            </View>
+            {invoice.transactionType === "INTER_STATE" ? (
+              <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
+                <Text className="text-gray-500">IGST</Text>
+                <Text className="font-medium text-gray-900">
+                  {formatCurrency(invoice.igstTotal)}
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
+                  <Text className="text-gray-500">CGST</Text>
+                  <Text className="font-medium text-gray-900">
+                    {formatCurrency(invoice.cgstTotal)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
+                  <Text className="text-gray-500">SGST</Text>
+                  <Text className="font-medium text-gray-900">
+                    {formatCurrency(invoice.sgstTotal)}
+                  </Text>
+                </View>
+              </>
+            )}
             <View className="flex-row justify-between px-4 py-3 bg-gray-50">
               <Text className="font-semibold text-gray-900">Grand Total</Text>
               <Text className="font-bold text-lg text-gray-900">
@@ -273,35 +283,48 @@ export default function InvoiceDetailScreen() {
           </Card>
         )}
 
-        <View className="flex-row gap-3 mb-8">
-          <Button
-            variant="outline"
-            onPress={handleDownloadPdf}
-            disabled={downloadingPdf}
-            className="flex-1"
-          >
-            {downloadingPdf ? (
-              <ActivityIndicator size="small" color="#0052CC" />
-            ) : (
-              <View className="flex-row items-center">
-                <Ionicons name="share-outline" size={18} color="#374151" />
-                <Text className="text-gray-900 font-semibold ml-2">Share PDF</Text>
-              </View>
-            )}
-          </Button>
-
-          {canCancel && (
+        {canPreviewOrShare && (
+          <View className="flex-row gap-3 mb-8">
             <Button
-              variant="destructive"
-              onPress={handleCancelInvoice}
-              loading={cancelInvoice.isPending}
+              variant="outline"
+              onPress={handleSharePdf}
+              disabled={sharingPdf}
               className="flex-1"
             >
-              Cancel Invoice
+              {sharingPdf ? (
+                <ActivityIndicator size="small" color="#0052CC" />
+              ) : (
+                <View className="flex-row items-center">
+                  <Ionicons name="share-outline" size={18} color="#374151" />
+                  <Text className="text-gray-900 font-semibold ml-2">
+                    Share PDF
+                  </Text>
+                </View>
+              )}
             </Button>
-          )}
-        </View>
+
+            {canCancel && (
+              <Button
+                variant="destructive"
+                onPress={handleCancelInvoice}
+                loading={cancelInvoice.isPending}
+                className="flex-1"
+              >
+                Cancel Invoice
+              </Button>
+            )}
+          </View>
+        )}
       </ScrollView>
+
+      {canPreviewOrShare && id ? (
+        <InvoicePdfPreviewModal
+          visible={showPdfPreview}
+          invoiceId={id}
+          invoiceNumber={invoice.invoiceNumber}
+          onClose={() => setShowPdfPreview(false)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

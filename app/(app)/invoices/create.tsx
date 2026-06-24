@@ -13,16 +13,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { v4 as uuidv4 } from "uuid";
+import { generateId } from "../../../src/utils/id";
 import { useCreateInvoiceOffline } from "../../../src/hooks/useCreateInvoiceOffline";
 import { useCustomerSearch, useCreateCustomer } from "../../../src/hooks/useCustomers";
 import { useProductSearch } from "../../../src/hooks/useProducts";
-import { useActiveBusiness } from "../../../src/hooks/useBusiness";
+import { useActiveBusiness, useBusinesses } from "../../../src/hooks/useBusiness";
+import { useAuthStore } from "../../../src/stores/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../src/components/Card";
 import { Button } from "../../../src/components/Button";
 import { Input } from "../../../src/components/Input";
 import { Select } from "../../../src/components/Select";
 import { ErrorMessage } from "../../../src/components/ErrorMessage";
+import { InvoiceDraftPreview } from "../../../src/components/InvoiceDraftPreview";
 import { calculateGST, GST_RATES, INDIAN_STATES } from "../../../src/utils/gst";
 import { formatCurrency, formatDateForAPI } from "../../../src/utils/format";
 import type { LineItem, Customer, Product, GstRate, PaymentMode } from "../../../src/types";
@@ -36,7 +38,7 @@ const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
 
 function createEmptyItem(): LineItem {
   return {
-    id: uuidv4(),
+    id: generateId(),
     name: "",
     hsn: "",
     unit: "PCS",
@@ -48,10 +50,23 @@ function createEmptyItem(): LineItem {
 }
 
 export default function CreateInvoiceScreen() {
-  const clientBillIdRef = useRef(uuidv4());
+  const clientBillIdRef = useRef(generateId());
+  const activeBusinessId = useAuthStore((s) => s.activeBusinessId);
+  const storeMembership = useAuthStore((s) =>
+    s.memberships.find((m) => m.businessId === s.activeBusinessId)
+  );
   const { data: business } = useActiveBusiness();
+  const { data: businessesData } = useBusinesses();
+  const apiMembership = businessesData?.memberships.find(
+    (m) => m.businessId === activeBusinessId
+  );
   const createInvoice = useCreateInvoiceOffline();
   const createCustomer = useCreateCustomer();
+
+  const sellerGSTIN =
+    business?.gstin ?? apiMembership?.gstin ?? storeMembership?.gstin ?? null;
+  const sellerStateCode =
+    business?.stateCode ?? apiMembership?.stateCode ?? storeMembership?.stateCode ?? "00";
 
   const [customerId, setCustomerId] = useState<string | undefined>();
   const [customerName, setCustomerName] = useState("");
@@ -74,6 +89,7 @@ export default function CreateInvoiceScreen() {
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [productQuery, setProductQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const { data: customersData } = useCustomerSearch(customerQuery, customerQuery.length > 0);
   const { data: productsData } = useProductSearch(productQuery, productQuery.length > 0);
@@ -83,8 +99,8 @@ export default function CreateInvoiceScreen() {
 
   const gstResult = useMemo(() => {
     return calculateGST({
-      sellerGSTIN: business?.gstin ?? null,
-      sellerStateCode: business?.stateCode ?? "00",
+      sellerGSTIN,
+      sellerStateCode,
       buyerStateCode: selectedCustomer?.stateCode ?? null,
       items: items.map((item) => ({
         name: item.name,
@@ -94,7 +110,7 @@ export default function CreateInvoiceScreen() {
         gstRate: item.gstRate,
       })),
     });
-  }, [items, business, selectedCustomer]);
+  }, [items, sellerGSTIN, sellerStateCode, selectedCustomer]);
 
   const selectCustomer = (customer: Customer) => {
     setCustomerId(customer.id);
@@ -216,7 +232,9 @@ export default function CreateInvoiceScreen() {
           <Ionicons name="close" size={24} color="#374151" />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-gray-900">New Invoice</Text>
-        <View className="w-6" />
+        <TouchableOpacity onPress={() => setShowPreview(true)}>
+          <Text className="text-primary font-semibold">Preview</Text>
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -503,6 +521,13 @@ export default function CreateInvoiceScreen() {
                   {gstResult.documentType.replace("_", " ")}
                 </Text>
               </View>
+              {!sellerGSTIN && (
+                <View className="px-4 py-2 border-b border-gray-100">
+                  <Text className="text-xs text-amber-700">
+                    Add your business GSTIN in Settings to calculate CGST/SGST on tax invoices.
+                  </Text>
+                </View>
+              )}
               <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
                 <Text className="text-gray-500">Transaction Type</Text>
                 <Text className="font-medium text-gray-900">
@@ -529,24 +554,29 @@ export default function CreateInvoiceScreen() {
                   {formatCurrency(gstResult.summary.taxableAmount)}
                 </Text>
               </View>
-              <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
-                <Text className="text-gray-500">CGST</Text>
-                <Text className="font-medium text-gray-900">
-                  {formatCurrency(gstResult.summary.cgstTotal)}
-                </Text>
-              </View>
-              <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
-                <Text className="text-gray-500">SGST</Text>
-                <Text className="font-medium text-gray-900">
-                  {formatCurrency(gstResult.summary.sgstTotal)}
-                </Text>
-              </View>
-              <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
-                <Text className="text-gray-500">IGST</Text>
-                <Text className="font-medium text-gray-900">
-                  {formatCurrency(gstResult.summary.igstTotal)}
-                </Text>
-              </View>
+              {gstResult.transactionType === "INTER_STATE" ? (
+                <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
+                  <Text className="text-gray-500">IGST</Text>
+                  <Text className="font-medium text-gray-900">
+                    {formatCurrency(gstResult.summary.igstTotal)}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
+                    <Text className="text-gray-500">CGST</Text>
+                    <Text className="font-medium text-gray-900">
+                      {formatCurrency(gstResult.summary.cgstTotal)}
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between px-4 py-2 border-b border-gray-100">
+                    <Text className="text-gray-500">SGST</Text>
+                    <Text className="font-medium text-gray-900">
+                      {formatCurrency(gstResult.summary.sgstTotal)}
+                    </Text>
+                  </View>
+                </>
+              )}
               <View className="flex-row justify-between px-4 py-3 bg-primary-50">
                 <Text className="font-semibold text-gray-900">Grand Total</Text>
                 <Text className="font-bold text-xl text-primary">
@@ -632,6 +662,18 @@ export default function CreateInvoiceScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      <InvoiceDraftPreview
+        visible={showPreview}
+        onClose={() => setShowPreview(false)}
+        business={business}
+        customer={selectedCustomer}
+        invoiceDate={invoiceDate}
+        paymentMode={paymentMode}
+        notes={notes}
+        items={items}
+        gstResult={gstResult}
+      />
     </SafeAreaView>
   );
 }

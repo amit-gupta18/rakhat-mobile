@@ -5,6 +5,7 @@ import {
   getRefreshToken,
   getBusinessId,
   setAccessToken,
+  setRefreshToken,
   clearAllTokens,
 } from "../utils/secureStore";
 import { router } from "expo-router";
@@ -28,6 +29,7 @@ async function refreshAccessToken(): Promise<string | null> {
       })
       .json<{
         accessToken: string;
+        refreshToken?: string;
         user: { id: string; email: string };
         memberships: Array<{
           businessId: string;
@@ -39,6 +41,9 @@ async function refreshAccessToken(): Promise<string | null> {
       }>();
 
     await setAccessToken(response.accessToken);
+    if (response.refreshToken) {
+      await setRefreshToken(response.refreshToken);
+    }
     useAuthStore.getState().setAccessToken(response.accessToken);
 
     return response.accessToken;

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { v4 as uuidv4 } from "uuid";
+import { generateId } from "./id";
 import type { CreateInvoicePayload, OfflineInvoice } from "../types";
 
 const QUEUE_KEY = "@offline_invoice_queue";
@@ -18,7 +18,7 @@ export async function getOfflineQueue(): Promise<OfflineInvoice[]> {
 export async function addToOfflineQueue(payload: CreateInvoicePayload): Promise<OfflineInvoice> {
   const queue = await getOfflineQueue();
   const offlineInvoice: OfflineInvoice = {
-    id: uuidv4(),
+    id: generateId(),
     payload,
     createdAt: new Date().toISOString(),
     retryCount: 0,

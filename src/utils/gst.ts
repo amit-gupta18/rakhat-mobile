@@ -8,7 +8,7 @@ export function calculateGST(input: GSTInput): GSTOutput {
 
   const allZeroRates = items.every((item) => item.gstRate === 0);
   const documentType: GSTOutput["documentType"] =
-    sellerGSTIN === null || allZeroRates ? "BILL_OF_SUPPLY" : "TAX_INVOICE";
+    !sellerGSTIN || allZeroRates ? "BILL_OF_SUPPLY" : "TAX_INVOICE";
 
   const isInterState =
     buyerStateCode !== null && buyerStateCode !== sellerStateCode;

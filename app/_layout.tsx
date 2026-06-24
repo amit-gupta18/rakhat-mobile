@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import * as SplashScreen from "expo-splash-screen";
 import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthStore } from "../src/stores/authStore";
 import { getStoredSession } from "../src/utils/secureStore";
 import { refreshSession } from "../src/api/endpoints/auth";
@@ -43,16 +44,16 @@ export default function RootLayout() {
       try {
         const stored = await getStoredSession();
 
-        if (stored.accessToken && stored.refreshToken) {
+        if (stored.refreshToken) {
           const refreshed = await refreshSession();
           if (refreshed) {
-      await setSession({
-        userId: refreshed.user.id,
-        email: refreshed.user.email,
-        accessToken: refreshed.accessToken,
-        refreshToken: refreshed.refreshToken ?? stored.refreshToken,
-        memberships: refreshed.memberships,
-      });
+            await setSession({
+              userId: refreshed.user.id,
+              email: refreshed.user.email,
+              accessToken: refreshed.accessToken,
+              refreshToken: refreshed.refreshToken ?? stored.refreshToken,
+              memberships: refreshed.memberships,
+            });
           } else {
             await clearAuth();
           }
@@ -94,14 +95,16 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <View className="flex-1 bg-white">
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
-        <StatusBar style="dark" />
-      </View>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <View className="flex-1 bg-white">
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(app)" />
+          </Stack>
+          <StatusBar style="dark" />
+        </View>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

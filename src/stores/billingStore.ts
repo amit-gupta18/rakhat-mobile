@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { LineItem, Customer, GstRate } from "../types";
-import { v4 as uuidv4 } from "uuid";
+import { generateId } from "../utils/id";
 
 type BillingState = {
   customerId: string | undefined;
@@ -35,7 +35,7 @@ type BillingState = {
 };
 
 const createEmptyItem = (): LineItem => ({
-  id: uuidv4(),
+  id: generateId(),
   name: "",
   hsn: "",
   unit: "PCS",
@@ -53,7 +53,7 @@ const getInitialState = () => ({
   paymentMode: "CASH" as const,
   notes: "",
   items: [createEmptyItem()],
-  clientBillId: uuidv4(),
+  clientBillId: generateId(),
 });
 
 export const useBillingStore = create<BillingState>((set) => ({

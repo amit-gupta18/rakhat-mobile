@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Tabs } from "expo-router";
 import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useActiveRole } from "../../../src/stores/authStore";
 import { Drawer } from "../../../src/components/Drawer";
+import { TAB_BAR_HEIGHT } from "../../../src/constants/layout";
 import type { Role } from "../../../src/types";
 
 type TabConfig = {
@@ -48,6 +50,8 @@ const TABS: TabConfig[] = [
 export default function TabsLayout() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const role = useActiveRole();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
 
   return (
     <>
@@ -59,13 +63,18 @@ export default function TabsLayout() {
           tabBarStyle: {
             backgroundColor: "#ffffff",
             borderTopColor: "#E5E7EB",
-            height: 60,
-            paddingBottom: 8,
+            borderTopWidth: 1,
+            height: TAB_BAR_HEIGHT + bottomInset,
             paddingTop: 8,
+            paddingBottom: bottomInset,
+          },
+          tabBarItemStyle: {
+            paddingVertical: 2,
           },
           tabBarLabelStyle: {
             fontSize: 11,
             fontWeight: "500",
+            marginTop: 2,
           },
         }}
       >

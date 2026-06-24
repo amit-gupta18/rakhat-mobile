@@ -72,7 +72,8 @@ export function useInvoicePdf(id: string | undefined, enabled: boolean = false) 
     queryKey: ["invoice-pdf", activeBusinessId, id],
     queryFn: () => getInvoicePdf(id!),
     enabled: !!activeBusinessId && !!id && enabled,
-    staleTime: 300000,
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

@@ -84,8 +84,11 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
 
 export async function logout(): Promise<void> {
   return apiCall(async () => {
+    const refreshToken = await getRefreshToken();
     try {
-      await api.post("auth/logout");
+      await api.post("auth/logout", {
+        json: refreshToken ? { refreshToken } : {},
+      });
     } catch {
       // Ignore errors on logout - we'll clear local state anyway
     }
