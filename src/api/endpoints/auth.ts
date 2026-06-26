@@ -8,8 +8,7 @@ import {
   storeSession,
 } from "../../utils/secureStore";
 import { useAuthStore } from "../../stores/authStore";
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.raseed.in/v1";
+import { API_BASE_URL } from "../../config/env";
 
 export type SignupPayload = {
   email: string;
@@ -43,7 +42,7 @@ type AuthResponseWithRefresh = AuthResponse & {
 export async function signup(payload: SignupPayload): Promise<AuthResponse> {
   return apiCall(async () => {
     const response = await ky
-      .post(`${BASE_URL}/auth/signup`, {
+      .post(`${API_BASE_URL}/auth/signup`, {
         json: payload,
         timeout: 30000,
       })
@@ -64,7 +63,7 @@ export async function signup(payload: SignupPayload): Promise<AuthResponse> {
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   return apiCall(async () => {
     const response = await ky
-      .post(`${BASE_URL}/auth/login`, {
+      .post(`${API_BASE_URL}/auth/login`, {
         json: payload,
         timeout: 30000,
       })
@@ -103,7 +102,7 @@ export async function refreshSession(): Promise<AuthResponse | null> {
 
   try {
     const response = await ky
-      .post(`${BASE_URL}/auth/refresh`, {
+      .post(`${API_BASE_URL}/auth/refresh`, {
         json: { refreshToken },
         timeout: 30000,
       })
@@ -125,7 +124,7 @@ export async function forgotPassword(
 ): Promise<{ message: string }> {
   return apiCall(async () => {
     return ky
-      .post(`${BASE_URL}/auth/forgot-password`, {
+      .post(`${API_BASE_URL}/auth/forgot-password`, {
         json: payload,
         timeout: 30000,
       })
@@ -138,7 +137,7 @@ export async function verifyOtp(
 ): Promise<{ resetToken: string }> {
   return apiCall(async () => {
     return ky
-      .post(`${BASE_URL}/auth/verify-otp`, {
+      .post(`${API_BASE_URL}/auth/verify-otp`, {
         json: payload,
         timeout: 30000,
       })
@@ -151,7 +150,7 @@ export async function resetPassword(
 ): Promise<{ message: string }> {
   return apiCall(async () => {
     return ky
-      .post(`${BASE_URL}/auth/reset-password`, {
+      .post(`${API_BASE_URL}/auth/reset-password`, {
         json: payload,
         timeout: 30000,
       })

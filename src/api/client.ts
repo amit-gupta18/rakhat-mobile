@@ -9,8 +9,7 @@ import {
   clearAllTokens,
 } from "../utils/secureStore";
 import { router } from "expo-router";
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.raseed.in/v1";
+import { API_BASE_URL } from "../config/env";
 
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
@@ -23,7 +22,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
   try {
     const response = await ky
-      .post(`${BASE_URL}/auth/refresh`, {
+      .post(`${API_BASE_URL}/auth/refresh`, {
         json: { refreshToken },
         timeout: 30000,
       })
@@ -76,7 +75,7 @@ async function handleAuthFailure(): Promise<void> {
 }
 
 export const api = ky.create({
-  prefixUrl: BASE_URL,
+  prefixUrl: API_BASE_URL,
   timeout: 30000,
   hooks: {
     beforeRequest: [
@@ -129,7 +128,7 @@ export const api = ky.create({
 
 export const apiWithRetryBody = (body: unknown) => {
   return ky.create({
-    prefixUrl: BASE_URL,
+    prefixUrl: API_BASE_URL,
     timeout: 30000,
     hooks: {
       beforeRequest: [
