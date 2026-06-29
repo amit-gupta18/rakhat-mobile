@@ -22,11 +22,11 @@ export type LoginPayload = {
 };
 
 export type ForgotPasswordPayload = {
-  phone: string;
+  email: string;
 };
 
 export type VerifyOtpPayload = {
-  phone: string;
+  email: string;
   otp: string;
 };
 

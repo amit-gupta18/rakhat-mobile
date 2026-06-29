@@ -25,7 +25,7 @@ const verifyOtpSchema = z.object({
 type VerifyOtpForm = z.infer<typeof verifyOtpSchema>;
 
 export default function VerifyOtpScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { email } = useLocalSearchParams<{ email: string }>();
   const verifyOtp = useVerifyOtp();
 
   const {
@@ -40,8 +40,8 @@ export default function VerifyOtpScreen() {
   });
 
   const onSubmit = (data: VerifyOtpForm) => {
-    if (!phone) return;
-    verifyOtp.mutate({ phone, otp: data.otp });
+    if (!email) return;
+    verifyOtp.mutate({ email, otp: data.otp });
   };
 
   return (
@@ -60,7 +60,7 @@ export default function VerifyOtpScreen() {
                 Verify OTP
               </Text>
               <Text className="text-gray-600">
-                Enter the 6-digit code sent to {phone}
+                Enter the 6-digit code sent to {email}
               </Text>
             </View>
 

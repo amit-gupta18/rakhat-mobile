@@ -76,7 +76,7 @@ export function useForgotPassword() {
     onSuccess: (_, variables) => {
       router.push({
         pathname: "/(auth)/verify-otp",
-        params: { phone: variables.phone },
+        params: { email: variables.email },
       });
     },
   });

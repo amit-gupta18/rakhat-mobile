@@ -17,7 +17,7 @@ import { Button } from "../../src/components/Button";
 import { ErrorMessage } from "../../src/components/ErrorMessage";
 
 const forgotPasswordSchema = z.object({
-  phone: z.string().min(10, "Enter a valid phone number"),
+  email: z.string().email("Enter a valid email"),
 });
 
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
@@ -32,7 +32,7 @@ export default function ForgotPasswordScreen() {
   } = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      phone: "",
+      email: "",
     },
   });
 
@@ -56,7 +56,7 @@ export default function ForgotPasswordScreen() {
                 Forgot password?
               </Text>
               <Text className="text-gray-600">
-                Enter your phone number and we&apos;ll send you an OTP to reset your password
+                Enter your email and we&apos;ll send you an OTP to reset your password
               </Text>
             </View>
 
@@ -69,17 +69,18 @@ export default function ForgotPasswordScreen() {
             <View className="space-y-4">
               <Controller
                 control={control}
-                name="phone"
+                name="email"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    label="Phone number"
-                    placeholder="9876543210"
-                    keyboardType="phone-pad"
-                    autoComplete="tel"
+                    label="Email"
+                    placeholder="you@example.com"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                    autoCapitalize="none"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
-                    error={errors.phone?.message}
+                    error={errors.email?.message}
                   />
                 )}
               />
